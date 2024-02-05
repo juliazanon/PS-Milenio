@@ -2,6 +2,7 @@
 require "./config/*"
 require "sam"
 require "./db/migrations/*"
+require "system"
 
 load_dependencies "jennifer"
 
@@ -11,5 +12,9 @@ load_dependencies "jennifer"
 #   puts "ping"
 # end
 # 
-# 
+
+# task "start" do
+#     system "crystal run src/rm_api.cr"
+# end
+
 Sam.help

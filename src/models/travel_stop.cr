@@ -1,3 +1,6 @@
+require "jennifer"
+# require "./travel_plan"
+
 class TravelStop < Jennifer::Model::Base
   with_timestamps
 
@@ -9,4 +12,6 @@ class TravelStop < Jennifer::Model::Base
     created_at: Time?,
     updated_at: Time?,
   )
+
+  # has_and_belongs_to_many :travel_plans, TravelPlan
 end
