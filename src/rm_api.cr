@@ -1,33 +1,108 @@
 require "kemal"
 require "../config/initializers/database"
 require "./models/*"
+require "./utils"
+require "json"
 
 module RmApi
   VERSION = "0.1.0"
 
-  get "/travel_plans" do
-    plans = {id: 1, travel_stops: [1, 2]}
-    plans.to_json
+  # Get all travel plans
+  get "/travel_plans" do |env|
+    # Get request params
+    optimize_str = env.params.query["optimize"]?
+    optimize = optimize_str.to_s == "true" || false
+    expand_str = env.params.query["expand"]?
+    expand = expand_str.to_s == "true" || false 
+
+    plans = TravelPlan.all.to_a
+    response = plans.to_json
+
+    # Sort travel stops
+    if (optimize)
+      plans.each do |plan|
+        priorities = get_priorities(plan)
+
+        stops_with_priorities = plan.travel_stops.zip(priorities)
+        sorted_stops_with_priorities = stops_with_priorities.sort_by! { |stop, priority| -priority }
+        sorted_travel_stops = sorted_stops_with_priorities.map { |stop, priority| stop }
+        plan.travel_stops = sorted_travel_stops
+      end
+
+      response = plans.to_json
+    end
+
+    # Expand travel stops
+    if (expand)
+      new_plans = [] of JSON::Any
+      plans.each do |plan|
+        new_plan = expand_plan(plan)
+        new_plans << JSON.parse(new_plan.to_json)
+      end
+
+      response = new_plans.to_json
+    end
+
+    response
   end
 
+  get "/travel_plans/:id" do |env|
+    id = env.params.url["id"].to_i32
+
+    # Get request params
+    optimize_str = env.params.query["optimize"]?
+    optimize = optimize_str.to_s == "true" || false
+    expand_str = env.params.query["expand"]?
+    expand = expand_str.to_s == "true" || false 
+
+    plan = TravelPlan.find(id)
+    response = plan.to_json
+
+    if (plan) # Check for Nil
+      # Sort travel stops
+      if (optimize)
+        priorities = get_priorities(plan)
+
+        stops_with_priorities = plan.travel_stops.zip(priorities)
+        sorted_stops_with_priorities = stops_with_priorities.sort_by! { |stop, priority| -priority }
+        sorted_travel_stops = sorted_stops_with_priorities.map { |stop, priority| stop }
+        plan.travel_stops = sorted_travel_stops
+
+        response = plan.to_json
+      end
+
+      # Expand travel stops
+      if (expand)
+        response = expand_plan(plan).to_json
+      end
+    end
+
+    response
+  end
+
+  # Create travel plan with array as input
   post "/travel_plans" do |env|
     travel_stops_json =  env.params.json["travel_stops"]?.as(Array)
     travel_stops_ids = travel_stops_json.map { |item| item.to_s.to_i32? }.compact
 
-    # travel_stops = TravelStop.where { _id.in(travel_stops_ids) }.to_a
-
     new_travel_plan = TravelPlan.create(travel_stops: travel_stops_ids)
-    puts new_travel_plan.inspect
+    new_travel_plan.to_json
   end
 
-  post "/travel_stops" do |env|
-    name = env.params.json["name"]?.as(String)
-    type = env.params.json["type"]?.as(String)
-    dimension = env.params.json["dimension"]?.as(String)
+  put "/travel_plans/:id" do |env|
+    id = env.params.url["id"].to_i32
+    travel_stops_json =  env.params.json["travel_stops"]?.as(Array)
+    travel_stops_ids = travel_stops_json.map { |item| item.to_s.to_i32? }.compact
 
-    new_stop = TravelStop.create({name: name, type: type, dimension: dimension})
-    puts new_stop.inspect
+    TravelPlan.where { _id == id }.update { {:travel_stops => travel_stops_ids} }
+
+    plan = TravelPlan.find(id)
+    plan.to_json
   end
 
+  delete "/travel_plans/:id" do |env|
+    id = env.params.url["id"].to_i32
+    TravelPlan.delete(id)
+  end
   Kemal.run
 end

@@ -60,9 +60,7 @@ ALTER SEQUENCE public.migration_versions_id_seq OWNED BY public.migration_versio
 
 CREATE TABLE public.travel_plans (
     id integer NOT NULL,
-    travel_stops integer[],
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    travel_stops integer[]
 );
 
 
@@ -91,41 +89,6 @@ ALTER SEQUENCE public.travel_plans_id_seq OWNED BY public.travel_plans.id;
 
 
 --
--- Name: travel_plans_travel_stops; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.travel_plans_travel_stops (
-    id integer NOT NULL,
-    travel_plan_id integer,
-    travel_stop_id integer
-);
-
-
-ALTER TABLE public.travel_plans_travel_stops OWNER TO postgres;
-
---
--- Name: travel_plans_travel_stops_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.travel_plans_travel_stops_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.travel_plans_travel_stops_id_seq OWNER TO postgres;
-
---
--- Name: travel_plans_travel_stops_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.travel_plans_travel_stops_id_seq OWNED BY public.travel_plans_travel_stops.id;
-
-
---
 -- Name: travel_stops; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -134,8 +97,9 @@ CREATE TABLE public.travel_stops (
     name character varying(254) NOT NULL,
     type character varying(254) NOT NULL,
     dimension character varying(254) NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    residents character varying(254)[],
+    url character varying(254),
+    created character varying(254)
 );
 
 
@@ -178,13 +142,6 @@ ALTER TABLE ONLY public.travel_plans ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: travel_plans_travel_stops id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.travel_plans_travel_stops ALTER COLUMN id SET DEFAULT nextval('public.travel_plans_travel_stops_id_seq'::regclass);
-
-
---
 -- Name: travel_stops id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -208,35 +165,11 @@ ALTER TABLE ONLY public.travel_plans
 
 
 --
--- Name: travel_plans_travel_stops travel_plans_travel_stops_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.travel_plans_travel_stops
-    ADD CONSTRAINT travel_plans_travel_stops_pkey PRIMARY KEY (id);
-
-
---
 -- Name: travel_stops travel_stops_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.travel_stops
     ADD CONSTRAINT travel_stops_pkey PRIMARY KEY (id);
-
-
---
--- Name: travel_plans_travel_stops fk_cr_3a22f54713; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.travel_plans_travel_stops
-    ADD CONSTRAINT fk_cr_3a22f54713 FOREIGN KEY (travel_stop_id) REFERENCES public.travel_stops(id) ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: travel_plans_travel_stops fk_cr_cdb51117f7; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.travel_plans_travel_stops
-    ADD CONSTRAINT fk_cr_cdb51117f7 FOREIGN KEY (travel_plan_id) REFERENCES public.travel_plans(id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
