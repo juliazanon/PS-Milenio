@@ -112,13 +112,29 @@ def sort_stops(plan) : Array(Int32)
         sorted_locations.concat(locations_within_dimension.to_a.sort_by { |id| location_popularities[id.to_s] })
     end
     
-    response = sorted_locations.map { |str| str.to_i32 } # parse array os strings to int
+    response = sorted_locations.map { |str| str.to_i32 } # parse array of strings to int
   else
     # Handle errors, if necessary
     raise "Error fetching locations. Status code: #{res.status_code}"
   end
 
   return response
+end
+
+def sort_locations_by_id(locations, travel_stops) : Array(JSON::Any)
+  sorted_locations = Array(JSON::Any).new
+  travel_stops.each do |id|
+    i = 0
+    until i >= locations.size
+      location = locations[i]
+      if location["id"].to_s.to_i32 == id
+        sorted_locations << location
+      end
+      i += 1
+    end
+   end
+
+  return sorted_locations
 end
 
 # Get expanded travel plan
@@ -138,9 +154,10 @@ def expand_plan(plan) : JSON::Any
     # Write new JSON model
     expanded = [] of JSON::Any
     begin # If locations can be treated as Array
+      sorted_locations = sort_locations_by_id(locations, plan.travel_stops) # The fetch gets the locations ordered by id
       i = 0
-      until i >= locations.size
-        location = locations[i]
+      until i >= sorted_locations.size
+        location = sorted_locations[i]
         obj = {
           "id":        location["id"],
           "name":      location["name"],
