@@ -1,4 +1,5 @@
 require "jennifer"
+
 # require "./travel_stop"
 
 class TravelPlan < Jennifer::Model::Base

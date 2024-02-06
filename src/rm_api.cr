@@ -13,7 +13,7 @@ module RmApi
     optimize_str = env.params.query["optimize"]?
     optimize = optimize_str.to_s == "true" || false
     expand_str = env.params.query["expand"]?
-    expand = expand_str.to_s == "true" || false 
+    expand = expand_str.to_s == "true" || false
 
     plans = TravelPlan.all.to_a
     response = plans.to_json
@@ -22,11 +22,12 @@ module RmApi
     if (optimize)
       plans.each do |plan|
         priorities = get_priorities(plan)
-
-        stops_with_priorities = plan.travel_stops.zip(priorities)
-        sorted_stops_with_priorities = stops_with_priorities.sort_by! { |stop, priority| -priority }
-        sorted_travel_stops = sorted_stops_with_priorities.map { |stop, priority| stop }
-        plan.travel_stops = sorted_travel_stops
+        puts "#################"
+        puts priorities.to_json
+        # stops_with_priorities = plan.travel_stops.zip(priorities)
+        # sorted_stops_with_priorities = stops_with_priorities.sort_by! { |stop, priority| -priority }
+        # sorted_travel_stops = sorted_stops_with_priorities.map { |stop, priority| stop }
+        # plan.travel_stops = sorted_travel_stops
       end
 
       response = plans.to_json
@@ -53,7 +54,7 @@ module RmApi
     optimize_str = env.params.query["optimize"]?
     optimize = optimize_str.to_s == "true" || false
     expand_str = env.params.query["expand"]?
-    expand = expand_str.to_s == "true" || false 
+    expand = expand_str.to_s == "true" || false
 
     plan = TravelPlan.find(id)
     response = plan.to_json
@@ -62,11 +63,13 @@ module RmApi
       # Sort travel stops
       if (optimize)
         priorities = get_priorities(plan)
+        puts "#############"
+        puts plan.travel_stops.to_json
+        puts priorities.to_json
 
-        stops_with_priorities = plan.travel_stops.zip(priorities)
-        sorted_stops_with_priorities = stops_with_priorities.sort_by! { |stop, priority| -priority }
-        sorted_travel_stops = sorted_stops_with_priorities.map { |stop, priority| stop }
-        plan.travel_stops = sorted_travel_stops
+        plan.travel_stops = plan.travel_stops.sort_by { |id| priorities[id.to_s] }.reverse
+
+        puts plan.travel_stops.to_json
 
         response = plan.to_json
       end
@@ -82,7 +85,7 @@ module RmApi
 
   # Create travel plan with array as input
   post "/travel_plans" do |env|
-    travel_stops_json =  env.params.json["travel_stops"]?.as(Array)
+    travel_stops_json = env.params.json["travel_stops"]?.as(Array)
     travel_stops_ids = travel_stops_json.map { |item| item.to_s.to_i32? }.compact
 
     new_travel_plan = TravelPlan.create(travel_stops: travel_stops_ids)
@@ -91,7 +94,7 @@ module RmApi
 
   put "/travel_plans/:id" do |env|
     id = env.params.url["id"].to_i32
-    travel_stops_json =  env.params.json["travel_stops"]?.as(Array)
+    travel_stops_json = env.params.json["travel_stops"]?.as(Array)
     travel_stops_ids = travel_stops_json.map { |item| item.to_s.to_i32? }.compact
 
     TravelPlan.where { _id == id }.update { {:travel_stops => travel_stops_ids} }

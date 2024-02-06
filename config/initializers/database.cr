@@ -4,7 +4,7 @@ require "jennifer/adapter/postgres"
 module DBConfig
   extend self
 
-  APP_ENV = ENV["APP_ENV"]? || "development"
+  APP_ENV      = ENV["APP_ENV"]? || "development"
   DATABASE_URI = "localhost:5432"
 
   Jennifer::Config.configure do |conf|
