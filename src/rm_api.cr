@@ -21,13 +21,7 @@ module RmApi
     # Sort travel stops
     if (optimize)
       plans.each do |plan|
-        priorities = get_priorities(plan)
-        puts "#################"
-        puts priorities.to_json
-        # stops_with_priorities = plan.travel_stops.zip(priorities)
-        # sorted_stops_with_priorities = stops_with_priorities.sort_by! { |stop, priority| -priority }
-        # sorted_travel_stops = sorted_stops_with_priorities.map { |stop, priority| stop }
-        # plan.travel_stops = sorted_travel_stops
+        plan.travel_stops = sort_stops(plan)
       end
 
       response = plans.to_json
@@ -62,15 +56,7 @@ module RmApi
     if (plan) # Check for Nil
       # Sort travel stops
       if (optimize)
-        priorities = get_priorities(plan)
-        puts "#############"
-        puts plan.travel_stops.to_json
-        puts priorities.to_json
-
-        plan.travel_stops = plan.travel_stops.sort_by { |id| priorities[id.to_s] }.reverse
-
-        puts plan.travel_stops.to_json
-
+        plan.travel_stops = sort_stops(plan)
         response = plan.to_json
       end
 
