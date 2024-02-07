@@ -1,45 +1,50 @@
 require "json"
 require "http/client"
 
+##########################
+# Functions for optimize #
+##########################
+
+def get_ids_from_url(url) : String
+  if index = url.to_s.rindex("/")
+    id = url.to_s[index + 1..]
+  else
+    id = url.to_s
+  end
+  id + ","
+end
+
 # Get popularity of a single location by its residents array
 def get_location_popularity(residents) : Int32
   total_episodes = 0
   url = "https://rickandmortyapi.com/api/character/"
 
+  # Get array of residents url and store the ids in an array
   begin # Try treating residents as array
     j = 0
     until j >= residents.size
       # Get last digits of the residents url to make a single query
-      if index = residents[j].to_s.rindex("/")
-        id = residents[j].to_s[index + 1..]
-      else
-        id = residents[j].to_s
-      end
-      url += id + ","
+      url += get_ids_from_url(residents[j])
       j += 1
     end
   rescue e # If only 1 resident
     begin
-      if index = residents.to_s.rindex("/")
-        id = residents.to_s[index + 1..]
-      else
-        id = residents.to_s
-      end
-      url += id + ","
+      url += get_ids_from_url(residents)
     rescue e # If zero residents
-      return 0
+      puts "No residents"
     end
   end
-  # Fetch all residents of location and count episodes per resident
-  url = url[0, url.size - 1]
+  url = url[0, url.size - 1] # remove the last character (,)
+
+  # Fetch all resident objects of location and count episodes per resident
   resp = HTTP::Client.get(url)
   if resp.status_code == 200
     residents2 = JSON.parse(resp.body.to_s.strip)
+
     begin # Try treating residents2 as array
       j = 0
       until j >= residents2.size
-        resident = residents2[j]
-        episodes = resident["episode"].size
+        episodes = residents2[j]["episode"].size
         total_episodes += episodes
         j += 1
       end
@@ -47,7 +52,7 @@ def get_location_popularity(residents) : Int32
       begin
         episodes = residents2["episode"].size
         total_episodes += episodes
-      rescue e
+      rescue e # If there are zero residents
         return 0
       end
     end
@@ -56,79 +61,6 @@ def get_location_popularity(residents) : Int32
     raise "Error fetching locations. Status code: #{resp.status_code}"
   end
   return total_episodes
-end
-
-def sort_stops(plan) : Array(Int32)
-  location_popularities = {} of String => Int32
-  name_indexes = {} of String => Int32 # hash of the indexes on the array sorted by name
-  dimension_map = Hash(String, Array(String)).new { |hash, key| hash[key] = [] of String } #locations grouped by dimensions
-  dimension_popularity = Hash(String, Float64).new(0.0)
-  sorted_locations = [] of String
-  response = plan.travel_stops.to_a
-
-  # Fetch locations
-  url = "https://rickandmortyapi.com/api/location/"
-  plan.travel_stops.each do |stop|
-    url += "#{stop},"
-  end
-  # Remove the last character (,)
-  url = url[0, url.size - 1]
-  res = HTTP::Client.get(url)
-  if res.status_code == 200
-    locations = JSON.parse(res.body)
-
-    name_array = sort_stops_by_name(locations, plan.travel_stops) # travel_stops sorted by name
-
-    # Map on locations is not possible due to its type (JSON::Any)
-    begin # Try treating locations as Array
-      i = 0
-      until i >= locations.size
-        location = locations[i]
-        id = location["id"]
-        location_popularities[id.to_s] = get_location_popularity(location["residents"])
-
-        dimension_map[location["dimension"].to_s] << id.to_s
-
-        if (id)
-          index = name_array.index(id)
-          name_indexes[id.to_s] = index if index
-        end
-
-        i += 1
-      end
-    rescue e # If there is only 1 location
-      begin
-        location_popularities[locations["id"].to_s] = get_location_popularity(locations["residents"])
-
-        dimension_map[locations["dimension"].to_s] << locations["id"].to_s
-      rescue e # If there are zero locations
-        puts "No location"
-      end
-    end
-
-    # Calculate populariry of dimensions by mean of locations populatiries
-    dimension_map.each do |dimension, location_ids|
-        dimension_popularity[dimension] = location_ids.sum { |id| location_popularities[id] }.to_f / location_ids.size
-    end
-
-    # Sort dimensions by popularity
-    sorted_dimensions = dimension_popularity.to_a.sort_by { |tuple| tuple[1] }
-    
-    # Sort locations within dimensions
-    sorted_dimensions.each do |dimension, _|
-        locations_within_dimension = dimension_map[dimension]
-        sorted_locations.concat(locations_within_dimension.to_a.sort_by do |id| 
-          [location_popularities[id.to_s], name_indexes[id.to_s]]
-        end)
-    end
-    
-    response = sorted_locations.map { |str| str.to_i32 } # parse array of strings to int
-  else
-    # Handle errors, if necessary
-    raise "Error fetching locations. Status code: #{res.status_code}"
-  end
-
-  return response
 end
 
 # Returns the array travel_stops sorted by name
@@ -144,7 +76,7 @@ def sort_stops_by_name(locations, travel_stops) : Array(Int32)
   sorted_locations = locations_array.sort_by { |loc| loc["name"].to_s }
 
   # Hash to store location names by ID
-  location_names = Hash(String, String).new 
+  location_names = Hash(String, String).new
   sorted_locations.each do |loc|
     location_names[loc["id"].to_s] = loc["name"].to_s
   end
@@ -153,6 +85,89 @@ def sort_stops_by_name(locations, travel_stops) : Array(Int32)
 
   travel_stops
 end
+
+def sort_stops(plan) : Array(Int32)
+  location_popularity_map = {} of String => Int32                                          # hash os location popularities by id
+  name_indexes_map = {} of String => Int32                                                 # hash of the indexes on the array sorted by name
+  dimension_map = Hash(String, Array(String)).new { |hash, key| hash[key] = [] of String } # locations grouped by dimensions
+  dimension_popularity = Hash(String, Float64).new(0.0)                                    # hash of dimension popularities by name
+  sorted_locations = [] of String                                                          # array of sorted travel_stops
+  response = plan.travel_stops.to_a                                                        # default response
+
+  # Fetch locations
+  url = "https://rickandmortyapi.com/api/location/"
+  plan.travel_stops.each do |stop|
+    url += "#{stop},"
+  end
+  url = url[0, url.size - 1] # remove the last character (,)
+
+  res = HTTP::Client.get(url)
+  if res.status_code == 200
+    locations = JSON.parse(res.body)
+
+    name_array = sort_stops_by_name(locations, plan.travel_stops) # travel_stops sorted by name
+
+    # Populate maps
+    begin # Try treating locations as Array
+      i = 0
+      until i >= locations.size
+        location = locations[i]
+        id = location["id"]
+        location_popularity_map[id.to_s] = get_location_popularity(location["residents"])
+
+        dimension_map[location["dimension"].to_s] << id.to_s
+
+        if (id)
+          index = name_array.index(id)
+          name_indexes_map[id.to_s] = index if index
+        end
+
+        i += 1
+      end
+    rescue e # If there is only 1 location
+      begin
+        id = locations["id"]
+        location_popularity_map[id.to_s] = get_location_popularity(locations["residents"])
+
+        dimension_map[locations["dimension"].to_s] << id.to_s
+
+        if (id)
+          index = name_array.index(id)
+          name_indexes_map[id.to_s] = index if index
+        end
+      rescue e # If there are zero locations
+        puts "No location"
+      end
+    end
+
+    # Calculate populariry of dimensions by mean of locations populatiries
+    dimension_map.each do |dimension, location_ids|
+      dimension_popularity[dimension] = location_ids.sum { |id| location_popularity_map[id] }.to_f / location_ids.size
+    end
+
+    # Sort dimensions by popularity
+    sorted_dimensions = dimension_popularity.to_a.sort_by { |tuple| tuple[1] }
+
+    # Sort locations within dimensions by location popularity then name
+    sorted_dimensions.each do |dimension, _|
+      locations_within_dimension = dimension_map[dimension]
+      sorted_locations.concat(locations_within_dimension.to_a.sort_by do |id|
+        [location_popularity_map[id.to_s], name_indexes_map[id.to_s]]
+      end)
+    end
+
+    response = sorted_locations.map { |str| str.to_i32 } # parse array of strings to int
+  else
+    # Handle errors, if necessary
+    raise "Error fetching locations. Status code: #{res.status_code}"
+  end
+
+  return response
+end
+
+########################
+# Functions for expand #
+########################
 
 # Sort locations fetched by the ids passed in travel_stops
 def sort_locations_by_id(locations, travel_stops) : Array(JSON::Any)
@@ -166,9 +181,9 @@ def sort_locations_by_id(locations, travel_stops) : Array(JSON::Any)
       end
       i += 1
     end
-   end
+  end
 
-  return sorted_locations
+  sorted_locations
 end
 
 # Get expanded travel plan
@@ -187,7 +202,7 @@ def expand_plan(plan) : JSON::Any
 
     # Write new JSON model
     expanded = [] of JSON::Any
-    begin # If locations can be treated as Array
+    begin                                                                   # If locations can be treated as Array
       sorted_locations = sort_locations_by_id(locations, plan.travel_stops) # The fetch gets the locations ordered by id
       i = 0
       until i >= sorted_locations.size
@@ -224,5 +239,5 @@ def expand_plan(plan) : JSON::Any
     raise "Error fetching locations. Status code: #{res.status_code}"
   end
 
-  return JSON.parse(new_plan.to_json)
+  JSON.parse(new_plan.to_json)
 end
