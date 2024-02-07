@@ -5,7 +5,7 @@ require "http/client"
 # Functions for optimize #
 ##########################
 
-def get_ids_from_url(url) : String
+def get_id_from_url(url) : String
   if index = url.to_s.rindex("/")
     id = url.to_s[index + 1..]
   else
@@ -14,9 +14,7 @@ def get_ids_from_url(url) : String
   id + ","
 end
 
-# Get popularity of a single location by its residents array
-def get_location_popularity(residents) : Int32
-  total_episodes = 0
+def get_query_url(residents)
   url = "https://rickandmortyapi.com/api/character/"
 
   # Get array of residents url and store the ids in an array
@@ -24,33 +22,36 @@ def get_location_popularity(residents) : Int32
     j = 0
     until j >= residents.size
       # Get last digits of the residents url to make a single query
-      url += get_ids_from_url(residents[j])
+      url += get_id_from_url(residents[j])
       j += 1
     end
-  rescue e # If only 1 resident
+  rescue # If only 1 resident
     begin
-      url += get_ids_from_url(residents)
-    rescue e # If zero residents
+      url += get_id_from_url(residents)
+    rescue # If zero residents
       puts "No residents"
     end
   end
-  url = url[0, url.size - 1] # remove the last character (,)
+  url = url[0, url.size - 1] # remove the last character (, or /)
+end
 
+def get_total_episodes(url)
+  total_episodes = 0
   # Fetch all resident objects of location and count episodes per resident
-  resp = HTTP::Client.get(url)
-  if resp.status_code == 200
-    residents2 = JSON.parse(resp.body.to_s.strip)
+  response = HTTP::Client.get(url)
+  if response.status_code == 200
+    residents = JSON.parse(response.body.to_s.strip)
 
-    begin # Try treating residents2 as array
+    begin # Try treating residents as array
       j = 0
-      until j >= residents2.size
-        episodes = residents2[j]["episode"].size
+      until j >= residents.size
+        episodes = residents[j]["episode"].size
         total_episodes += episodes
         j += 1
       end
     rescue e # Case where there is only 1 resident (not an array)
       begin
-        episodes = residents2["episode"].size
+        episodes = residents["episode"].size
         total_episodes += episodes
       rescue e # If there are zero residents
         return 0
@@ -58,9 +59,16 @@ def get_location_popularity(residents) : Int32
     end
   else
     # Handle errors, if necessary
-    raise "Error fetching locations. Status code: #{resp.status_code}"
+    raise "Error fetching locations. Status code: #{response.status_code}"
   end
-  return total_episodes
+
+  total_episodes
+end
+
+# Get popularity of a single location by its residents array
+def get_location_popularity(residents) : Int32
+  url = get_query_url(residents)
+  get_total_episodes(url)
 end
 
 # Returns the array travel_stops sorted by name
@@ -86,6 +94,7 @@ def sort_stops_by_name(locations, travel_stops) : Array(Int32)
   travel_stops
 end
 
+# Sort travel_stops array according to dimension and location popularities, then location name
 def sort_stops(plan) : Array(Int32)
   location_popularity_map = {} of String => Int32                                          # hash os location popularities by id
   name_indexes_map = {} of String => Int32                                                 # hash of the indexes on the array sorted by name
