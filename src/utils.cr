@@ -58,9 +58,9 @@ def get_location_popularity(residents) : Int32
   return total_episodes
 end
 
-# Get array of popularities for travel stops in a plan
 def sort_stops(plan) : Array(Int32)
   location_popularities = {} of String => Int32
+  name_indexes = {} of String => Int32 # hash of the indexes on the array sorted by name
   dimension_map = Hash(String, Array(String)).new { |hash, key| hash[key] = [] of String } #locations grouped by dimensions
   dimension_popularity = Hash(String, Float64).new(0.0)
   sorted_locations = [] of String
@@ -77,14 +77,22 @@ def sort_stops(plan) : Array(Int32)
   if res.status_code == 200
     locations = JSON.parse(res.body)
 
+    name_array = sort_stops_by_name(locations, plan.travel_stops) # travel_stops sorted by name
+
     # Map on locations is not possible due to its type (JSON::Any)
     begin # Try treating locations as Array
       i = 0
       until i >= locations.size
         location = locations[i]
-        location_popularities[location["id"].to_s] = get_location_popularity(location["residents"])
+        id = location["id"]
+        location_popularities[id.to_s] = get_location_popularity(location["residents"])
 
-        dimension_map[location["dimension"].to_s] << location["id"].to_s
+        dimension_map[location["dimension"].to_s] << id.to_s
+
+        if (id)
+          index = name_array.index(id)
+          name_indexes[id.to_s] = index if index
+        end
 
         i += 1
       end
@@ -94,7 +102,7 @@ def sort_stops(plan) : Array(Int32)
 
         dimension_map[locations["dimension"].to_s] << locations["id"].to_s
       rescue e # If there are zero locations
-        # Do nothing
+        puts "No location"
       end
     end
 
@@ -105,11 +113,13 @@ def sort_stops(plan) : Array(Int32)
 
     # Sort dimensions by popularity
     sorted_dimensions = dimension_popularity.to_a.sort_by { |tuple| tuple[1] }
-
+    
     # Sort locations within dimensions
     sorted_dimensions.each do |dimension, _|
         locations_within_dimension = dimension_map[dimension]
-        sorted_locations.concat(locations_within_dimension.to_a.sort_by { |id| location_popularities[id.to_s] })
+        sorted_locations.concat(locations_within_dimension.to_a.sort_by do |id| 
+          [location_popularities[id.to_s], name_indexes[id.to_s]]
+        end)
     end
     
     response = sorted_locations.map { |str| str.to_i32 } # parse array of strings to int
@@ -121,6 +131,30 @@ def sort_stops(plan) : Array(Int32)
   return response
 end
 
+# Returns the array travel_stops sorted by name
+def sort_stops_by_name(locations, travel_stops) : Array(Int32)
+  # Sort locations alphabetically
+  locations_array = [] of JSON::Any
+  i = 0
+  until i >= locations.size
+    locations_array << locations[i]
+    i += 1
+  end
+
+  sorted_locations = locations_array.sort_by { |loc| loc["name"].to_s }
+
+  # Hash to store location names by ID
+  location_names = Hash(String, String).new 
+  sorted_locations.each do |loc|
+    location_names[loc["id"].to_s] = loc["name"].to_s
+  end
+
+  travel_stops.sort_by! { |id| location_names[id.to_s] }
+
+  travel_stops
+end
+
+# Sort locations fetched by the ids passed in travel_stops
 def sort_locations_by_id(locations, travel_stops) : Array(JSON::Any)
   sorted_locations = Array(JSON::Any).new
   travel_stops.each do |id|
