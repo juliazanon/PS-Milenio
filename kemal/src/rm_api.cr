@@ -9,7 +9,9 @@ module RmApi
 
   # Get all travel plans
   get "/travel_plans" do |env|
-    Controllers.get_all_plans(env)
+    optimize = env.params.query["optimize"]? == "true"
+    expand = env.params.query["expand"]? == "true"
+    Controllers.get_all_plans(optimize, expand)
   end
 
   # Get a specific travel plan

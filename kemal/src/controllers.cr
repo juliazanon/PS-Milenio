@@ -2,11 +2,7 @@ require "./models/*"
 require "./utils"
 
 module Controllers
-  def self.get_all_plans(env) : String
-    # Get request params
-    optimize = env.params.query["optimize"]? == "true"
-    expand = env.params.query["expand"]? == "true"
-
+  def self.get_all_plans(optimize, expand) : String
     plans = TravelPlan.all.to_a
     response = plans.to_json
 
