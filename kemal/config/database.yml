@@ -1,5 +1,5 @@
 default: &default
-  host: localhost
+  host: postgres
   user: postgres
   password: password
   adapter: postgres

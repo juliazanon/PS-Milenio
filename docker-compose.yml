@@ -1,0 +1,30 @@
+services:
+  kemal:
+    build:
+      context: kemal
+    volumes:
+      - ./kemal:/src
+      - ./pg_dump_bin:/usr/local/bin/pg_dump
+    ports:
+      - 3000:3000
+    # environment:
+    #   - DATABASE_USER=postgres
+    #   - DATABASE_PASSWORD=password
+    depends_on:
+      - postgres
+    networks:
+      - db
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres 
+      POSTGRES_DB: milenio
+    volumes:
+      - ./postgres/pgdata:/var/lib/postgresql/data
+    networks:
+      - db
+networks:
+  db:

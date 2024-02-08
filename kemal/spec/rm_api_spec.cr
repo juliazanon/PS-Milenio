@@ -1,5 +1,8 @@
 require "./spec_helper"
 require "../src/models/travel_plan"
+require "../src/controllers"
+# require "webmock"
+require "mocks"
 
 # get_id_from_url
 it "returns id from the end of an url" do
@@ -82,3 +85,8 @@ it "returns expanded travel plan" do
   expanded = expand_plan(plan)
   expanded.should eq(get_expanded_plan())
 end
+
+###############
+# Query tests #
+###############
+

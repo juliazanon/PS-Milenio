@@ -1,5 +1,6 @@
-/docs/
-/lib/
-/bin/
-/.shards/
-*.dwarf
+kemal/docs/
+kemal/lib/
+kemal/bin/
+kemal/.shards/
+kemal/*.dwarf
+postgres/pgdata
