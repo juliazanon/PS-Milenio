@@ -18,7 +18,11 @@ module RmApi
 
   # Create travel plan with array travel_stops as param
   post "/travel_plans" do |env|
-    Controllers.create_plan(env)
+    plan = Controllers.create_plan(env)
+    response = env.response
+    response.status_code = 201
+
+    response.print(plan)
   end
 
   # Edit travel plan array travel_stops as param
@@ -28,7 +32,9 @@ module RmApi
 
   # Delete travel plan
   delete "/travel_plans/:id" do |env|
-    Controllers.delete_plan(env)
+    result = Controllers.delete_plan(env)
+    response = env.response
+    response.status_code = 204
   end
 
   Kemal.run

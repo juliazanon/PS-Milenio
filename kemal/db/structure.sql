@@ -89,45 +89,6 @@ ALTER SEQUENCE public.travel_plans_id_seq OWNED BY public.travel_plans.id;
 
 
 --
--- Name: travel_stops; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.travel_stops (
-    id integer NOT NULL,
-    name character varying(254) NOT NULL,
-    type character varying(254) NOT NULL,
-    dimension character varying(254) NOT NULL,
-    residents character varying(254)[],
-    url character varying(254),
-    created character varying(254)
-);
-
-
-ALTER TABLE public.travel_stops OWNER TO postgres;
-
---
--- Name: travel_stops_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.travel_stops_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.travel_stops_id_seq OWNER TO postgres;
-
---
--- Name: travel_stops_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.travel_stops_id_seq OWNED BY public.travel_stops.id;
-
-
---
 -- Name: migration_versions id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -139,13 +100,6 @@ ALTER TABLE ONLY public.migration_versions ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.travel_plans ALTER COLUMN id SET DEFAULT nextval('public.travel_plans_id_seq'::regclass);
-
-
---
--- Name: travel_stops id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.travel_stops ALTER COLUMN id SET DEFAULT nextval('public.travel_stops_id_seq'::regclass);
 
 
 --
@@ -162,14 +116,6 @@ ALTER TABLE ONLY public.migration_versions
 
 ALTER TABLE ONLY public.travel_plans
     ADD CONSTRAINT travel_plans_pkey PRIMARY KEY (id);
-
-
---
--- Name: travel_stops travel_stops_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.travel_stops
-    ADD CONSTRAINT travel_stops_pkey PRIMARY KEY (id);
 
 
 --
