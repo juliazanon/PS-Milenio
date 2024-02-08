@@ -82,4 +82,20 @@ module Controllers
     id = env.params.url["id"].to_i32
     TravelPlan.delete(id)
   end
+
+  def self.append_stop(env)
+    id = env.params.url["id"].to_i32
+    stop = env.params.url["stop"].to_i32
+
+    plan = TravelPlan.find(id)
+    if (plan)
+      stops_ids = plan.travel_stops
+      stops_ids << stop
+
+      TravelPlan.where { _id == id }.update { {:travel_stops => stops_ids} }
+
+      plan = TravelPlan.find(id)
+    end
+    plan.to_json
+  end
 end

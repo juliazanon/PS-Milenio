@@ -37,5 +37,10 @@ module RmApi
     response.status_code = 204
   end
 
+  # Append stop to travel plan
+  patch "/travel_plans/:id/:stop" do |env|
+    Controllers.append_stop(env)
+  end
+
   Kemal.run
 end
