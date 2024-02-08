@@ -4,6 +4,10 @@ shards:
     git: https://github.com/sija/backtracer.cr.git
     version: 1.2.2
 
+  crystagiri:
+    git: https://github.com/madeindjs/crystagiri.git
+    version: 0.3.5
+
   db:
     git: https://github.com/crystal-lang/crystal-db.git
     version: 0.11.0

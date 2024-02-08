@@ -1,6 +1,7 @@
 require "kemal"
 require "../config/initializers/database"
 require "./controllers"
+require "./images"
 require "json"
 
 module RmApi
@@ -40,6 +41,11 @@ module RmApi
   # Append stop to travel plan
   patch "/travel_plans/:id/:stop" do |env|
     Controllers.append_stop(env)
+  end
+
+  # Get image url of location
+  get "/location/image/:id" do |env|
+    get_image_url(env)
   end
 
   Kemal.run
