@@ -19,8 +19,10 @@
         <h3>Post Travel Plan</h3>
         <form action="/travel_plans" method="post" id="post-form">
             <label for="post-text">Enter Travel Stops:</label><br>
-            <span>write the ids separated by commas</span><br>
-            <input type="text" id="post-text" name="post-text"><br>
+            <div class="locations-container" id="travel-stops">
+                <input type="hidden" id="selected-stops" name="selected-stops" value="">
+                <button type="button"class=add-location id="add-stop">Add Stop</button>
+            </div>
             <input type="submit" value="Submit">
         </form>
     </div>
@@ -38,11 +40,13 @@
 </div>
 
 <script>
+    let locationsCounter = 0;
+
     document.getElementById("post-form").addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the default form submission
 
       // Get the input text value
-      let inputText = document.getElementById("post-text").value;
+      let inputText = document.getElementById("selected-stops").value;
       let numbers = inputText.split(",").map(Number);
 
       // Send the request with the modified data using fetch
@@ -136,7 +140,7 @@
             `;
             stopsContainer.appendChild(stopElement);
           });
-          planContainer.appendChild(stopsContainer)
+          planContainer.appendChild(stopsContainer);
 
           travelPlansContainer.appendChild(planContainer);
         });
@@ -146,7 +150,151 @@
       });
     }
 
+    function addLocationsDropdown(options) {
+        locationsCounter = locationsCounter + 1;
+        if (!options) {
+            throw new Error("No location options available");
+        }
+        const container = document.createElement("div");
+        container.classList.add("dropdown-location-container")
+        container.setAttribute("id","location-container-" + locationsCounter);
+
+        const selectElement = document.createElement("select");
+        selectElement.setAttribute("id","locations-dropdown-" + locationsCounter);
+        selectElement.innerHTML = options.map(location => `<option value="${location.id}">${location.name}</option>`).join("");
+
+        // Set the initial selected option
+        selectElement.selectedIndex = 0;
+
+        // Set the previously selected ID to the value of the initial selected option
+
+        container.appendChild(selectElement);
+        container.innerHTML += `<button type="button" id="remove-stop-${locationsCounter}">Remove Stop</button>`;
+
+        // Append the container to the locations container
+        document.getElementById("travel-stops").appendChild(container);
+
+        // Add event listener for this dropdown
+        addDropdownChangeEventListener(locationsCounter);
+        addDropdownDeleteEventListener(locationsCounter);
+    }
+
+    function addDropdownDeleteEventListener(locationsCounter) {
+        document.getElementById("remove-stop-" + locationsCounter).addEventListener("click", function (event) {
+            const selectElement = document.getElementById("locations-dropdown-" + locationsCounter);
+
+            const selectedStopsInput = document.getElementById("selected-stops");
+            // Remove the previously selected ID if it exists
+            let arr = selectedStopsInput.value.split(","); // Convert string to array
+
+            let index = arr.indexOf(selectElement.getAttribute("data-prev-id").toString());
+            if (index !== -1) {
+                arr.splice(index, 1);
+            }
+
+            selectedStopsInput.value = arr.join(",");
+            event.target.parentNode.remove();
+        });
+    }
+
+    function addDropdownChangeEventListener(locationsCounter) {
+        document.getElementById("locations-dropdown-" + locationsCounter).addEventListener("change", function(event) {
+            // Get the selected option
+            const selectElement = event.target;
+
+            const selectedStopsInput = document.getElementById("selected-stops");
+            const previouslySelectedId = selectElement.getAttribute("data-prev-id");
+
+            // Update the hidden input field with the selected travel stop IDs
+            if (selectElement.value !== previouslySelectedId) {
+                if (selectedStopsInput.value === "") {
+                    selectedStopsInput.value = selectElement.value;
+                } else {
+                    if (selectedStopsInput.value.includes(previouslySelectedId)) {
+                        // Remove the previously selected ID if it exists
+                        let arr = selectedStopsInput.value.split(","); // Convert string to array
+
+                        let index = arr.indexOf(previouslySelectedId.toString());
+                        if (index !== -1) {
+                            arr.splice(index, 1);
+                        }
+
+                        selectedStopsInput.value = arr.join(",");
+                    }
+                    
+                    if (selectedStopsInput.value === "") {
+                        selectedStopsInput.value = selectElement.value;
+                    } else selectedStopsInput.value += "," + selectElement.value;
+                }
+
+                // Update the previously selected ID
+                selectElement.setAttribute("data-prev-id", selectElement.value);
+            }
+        });
+    }
+
+    // Recursive function to fetch the remaining pages of locations
+    function fetchLocations(remainingPages, url, allLocations) {
+        return fetch(url)
+            .then(response => response.json())
+            .then(data => {
+            // Add the locations from the current page to the allLocations array
+            allLocations.push(...data.results);
+
+            // Recursively fetch the remaining pages of locations
+            if (remainingPages > 1) {
+                remainingPages--;
+                return fetchLocations(remainingPages, data.info.next, allLocations);
+            } else {
+                // Sort the allLocations array by alphabetical order
+                allLocations.sort((a, b) => a.name.localeCompare(b.name));
+
+                return allLocations;
+            }
+            });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
+        fetchAndDisplayTravelPlans();
+        const locations = [];
+
+        // Initial fetch of the first page of locations
+        fetchLocations(6, "https://rickandmortyapi.com/api/location", locations)
+            .then(() => {
+                // Pass the sorted locations array to the addLocationsDropdown function
+                addLocationsDropdown(locations, locationsCounter);
+
+                // Set previous id for dropdown
+                dropdown = document.getElementById("locations-dropdown-" + locationsCounter)
+                dropdown.setAttribute("data-prev-id", 2);
+
+                document.getElementById("remove-stop-" + locationsCounter).addEventListener("click", function (event) {
+                   event.target.parentNode.remove();
+
+                   const dropdown = document.getElementById("locations-dropdown-" + locationsCounter)
+                   const selectedStopsInput = document.getElementById("selected-stops");
+                   // Remove the previously selected ID if it exists
+                    let arr = selectedStopsInput.value.split(","); // Convert string to array
+
+                    let index = arr.indexOf(dropdown.getAttribute("data-prev-id").toString());
+                    if (index !== -1) {
+                        arr.splice(index, 1);
+                    }
+
+                    selectedStopsInput.value = arr.join(",");
+                });
+            });
+        
+        // Handle add locations dropdowns
+        document.getElementById("add-stop").addEventListener("click", function (event) {
+            addLocationsDropdown(locations, locationsCounter);
+
+            // Set previous id for dropdown
+            dropdown = document.getElementById("locations-dropdown-" + locationsCounter)
+            dropdown.setAttribute("data-prev-id", 2);
+        });
+
+        // Handle optimize and delete buttons
         const optimizeButton = document.getElementById("optimize-button");
         const deleteButton = document.getElementById("delete-button");
         optimizeButton.disabled = true;
@@ -252,10 +400,10 @@
             });
         });
 
+        // Delete selected travel plan
         document.getElementById("delete-button").addEventListener("click", function(event) {
             const selectedPlanId = event.target.dataset.planId;
 
-            // Send the request with the modified data using fetch
             fetch(`/travel_plans/${selectedPlanId}`, {
                 method: "DELETE",
                 headers: {
@@ -270,13 +418,11 @@
             })
             .then(data => {
                 fetchAndDisplayTravelPlans();
-                console.log(data); // Handle the response data as needed
+                console.log(data);
             })
             .catch(error => {
                 console.error("There was a problem with the fetch operation:", error);
             });
         });
     })
-
-    window.onload = fetchAndDisplayTravelPlans;
 </script>
