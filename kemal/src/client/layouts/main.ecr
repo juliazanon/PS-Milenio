@@ -1,0 +1,86 @@
+<html>
+    <head>
+        <title>Code Challenge</title>
+        <link rel="stylesheet" href="css/main.css"/>
+        <style>
+            body {
+                background: #04A1BF;
+                text-align: center;
+                justify-content: center;
+                font-family: 'Open Sans', sans-serif;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column;
+                align-items: center; /* Center the content horizontally */
+                padding: 20px;
+                box-sizing: border-box;
+            }
+
+            #travel-plans {
+                display: flex;
+                flex-wrap: wrap; /* Allow items to wrap to the next line */
+                justify-content: center; /* Center the plan containers horizontally */
+            }
+
+            .plan-container {
+                margin-right: 20px;
+                margin-bottom: 20px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .stops-container {
+                max-height: 200px;
+                min-height: 200px;
+                overflow: auto;
+                border: 1px solid #162a2e; 
+                border-radius: 5px;
+                margin-bottom: 20px;
+                padding: 10px;
+                background: #7ae1f5;
+                cursor: pointer;
+            }
+            .active {
+                border: 1px solid #98aeb3;
+                background: #47a3b5;
+            }
+            .stops-container:hover {
+                border: 1px solid #98aeb3;
+                background: #47a3b5;
+            }
+
+            .forms-container {
+                display: flex;
+                flex-direction: row;
+                justify-content: center; /* Center the forms horizontally */
+                margin-top: 20px; /* Add some space between plans and forms */
+            }
+
+            .forms-container > div {
+                margin-right: 20px;
+            }
+
+            .buttons {
+                display: flex;
+                flex-direction: row;
+            }
+
+            .optimize-button {
+                margin-top: 10px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+
+    <section id="main">
+        <div class="container">
+            <%= content %>
+        </div>
+    </section>
+
+    <script src="js/main.js"></script>
+    </body>
+</html>

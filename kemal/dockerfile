@@ -18,4 +18,4 @@ WORKDIR /app
 COPY . .
 EXPOSE 3000
 RUN shards install
-CMD ["crystal", "run", "src/rm_api.cr"]
+CMD ["crystal", "run", "src/server/rm_api.cr"]

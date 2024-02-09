@@ -23,7 +23,7 @@ require "../src/controllers"
 # describe Controllers do
 #   describe "get_all_plans" do
 #     it "..." do
-#       WebMock.stub 
+#       WebMock.stub
 
 #       end
 #     end

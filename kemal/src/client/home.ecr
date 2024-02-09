@@ -1,0 +1,282 @@
+<!-- Idea for frontend:
+    Show all travel plans.
+    Button do add new plan opens modal:
+        get all locations from rickandmortyapi, select one by name from dropdown input;
+        button to add another stop that will show another dropdown, and so forth;
+        button for sutbmit.
+-->
+
+<h1>Wrapper for Rick and morty API</h1><br>
+<h3>Travel Plans</h3>
+<div id="travel-plans"></div>
+<div class="buttons">
+    <button id="optimize-button">Optimize</button>
+    <button id="delete-button">Delete</button>
+</div>
+
+<div class="forms-container">
+    <div>
+        <h3>Post Travel Plan</h3>
+        <form action="/travel_plans" method="post" id="post-form">
+            <label for="post-text">Enter Travel Stops:</label><br>
+            <span>write the ids separated by commas</span><br>
+            <input type="text" id="post-text" name="post-text"><br>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+    <div>
+        <h3>Put Travel Plan</h3>
+        <form id="put-form">
+            <label for="put-plan-id">Enter Travel Plan ID:</label><br>
+            <input type="text" id="put-id" name="put-id"><br>
+            <label for="put-text">Enter Travel Stops:</label><br>
+            <span>write the ids separated by commas</span><br>
+            <input type="text" id="put-text" name="put-text"><br>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById("post-form").addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent the default form submission
+
+      // Get the input text value
+      let inputText = document.getElementById("post-text").value;
+      let numbers = inputText.split(",").map(Number);
+
+      // Send the request with the modified data using fetch
+      fetch("/travel_plans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "travel_stops":  numbers })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.text();
+      })
+      .then(data => {
+        fetchAndDisplayTravelPlans();
+        console.log(data); // Handle the response data as needed
+      })
+      .catch(error => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
+    });
+
+    // Event listener for submitting the "Put Travel Plan" form
+    document.getElementById("put-form").addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent the default form submission
+
+      const inputText = document.getElementById("put-text").value;
+      const numbers = inputText.split(",").map(Number);
+      const planId = document.getElementById("put-id").value;
+
+      fetch(`/travel_plans/${planId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "travel_stops":  numbers })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.text();
+      })
+      .then(data => {
+        fetchAndDisplayTravelPlans();
+        console.log(data); // Handle the response data as needed
+      })
+      .catch(error => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
+    });
+
+    // Function to fetch and display travel plans
+    function fetchAndDisplayTravelPlans() {
+      fetch("/travel_plans?expand=true")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then(data => {
+        const travelPlansContainer = document.getElementById("travel-plans");
+
+        // Clear existing travel plans
+        travelPlansContainer.innerHTML = "";
+
+        // Display each travel plan
+        data.forEach(plan => {
+          planContainer = document.createElement("div");
+          planContainer.classList.add("plan-container")
+
+          const planElement = document.createElement("p");
+          planElement.textContent = "Plan ID: " + plan.id;
+          planContainer.appendChild(planElement)
+
+          const stops = plan.travel_stops;
+          const stopsContainer = document.createElement("div")
+          stopsContainer.classList.add("stops-container");
+          stops.forEach(stop => {
+            const stopElement = document.createElement("div");
+            stopElement.innerHTML = `
+              <strong>Id:</strong> ${stop.id}<br>
+              <strong>Name:</strong> ${stop.name}<br>
+              <strong>Type:</strong> ${stop.type}<br>
+              <strong>Dimension:</strong> ${stop.dimension}<br>
+              <br>
+            `;
+            stopsContainer.appendChild(stopElement);
+          });
+          planContainer.appendChild(stopsContainer)
+
+          travelPlansContainer.appendChild(planContainer);
+        });
+      })
+      .catch(error => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const optimizeButton = document.getElementById("optimize-button");
+        const deleteButton = document.getElementById("delete-button");
+        optimizeButton.disabled = true;
+        deleteButton.disabled = true;
+
+        // Handle travel plans selection
+        document.addEventListener("click", function(event) {
+            const stopsContainers = document.querySelectorAll(".stops-container");
+            const clickedElement = event.target;
+
+            // Check if the clicked element is within any stops container
+            let isWithinStopsContainer = false;
+            stopsContainers.forEach(container => {
+                if (container.contains(clickedElement)) {
+                    isWithinStopsContainer = true;
+                }
+            });
+
+            // Select stops container
+            if (isWithinStopsContainer) {
+                const planContainer = clickedElement.closest(".plan-container");
+                if (planContainer) {
+                    // Get plan ID
+                    const firstChild = planContainer.firstElementChild;
+                    let planID = 0
+                    if (firstChild && firstChild.textContent.trim().length > 0) {
+                        const textContent = firstChild.textContent.trim();
+                        const pattern = /Plan ID: (\d+)/;
+                        const match = pattern.exec(textContent);
+                        if (match && match.length > 1) {
+                            planID = match[1];
+                        }
+                    }
+
+                    // Remove active class from all stops containers
+                    stopsContainers.forEach(container => {
+                        container.classList.remove("active");
+                        container.removeAttribute("id")
+                    });
+
+                    // Add active class to the stops container inside the clicked plan container
+                    const stopsContainer = planContainer.querySelector(".stops-container");
+                    if (stopsContainer) {
+                        stopsContainer.classList.add("active");
+                        stopsContainer.setAttribute("id", "selected-stops")
+                    }
+
+                    // Enable the optimize button
+                    optimizeButton.disabled = false;
+                    deleteButton.disabled = false;
+                    optimizeButton.dataset.planId = planID;
+                    deleteButton.dataset.planId = planID;
+                }
+            }
+
+            // Unselect stops container
+            if (!isWithinStopsContainer) {
+                stopsContainers.forEach(container => {
+                    container.classList.remove("active");
+                });
+
+                // Disable optimize button
+                optimizeButton.disabled = true;
+                deleteButton.disabled = true;
+                optimizeButton.dataset.planId = 0;
+                deleteButton.dataset.planId = 0;
+            }
+        });
+
+        // Optimize button click
+        document.getElementById("optimize-button").addEventListener("click", function (event) {
+            const selectedPlanId = event.target.dataset.planId;
+
+            fetch(`/travel_plans/${selectedPlanId}?optimize=true&expand=true`)
+            .then(response => {
+                if (!response.ok) {
+                throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(plan => {
+                const stopsContainer = document.getElementById("selected-stops")
+
+                // Clear existing travel plan
+                stopsContainer.innerHTML = "";
+
+                // Display travel plan
+                const stops = plan.travel_stops;
+                stops.forEach(stop => {
+                    const stopElement = document.createElement("div");
+                    stopElement.innerHTML = `
+                    <strong>Id:</strong> ${stop.id}<br>
+                    <strong>Name:</strong> ${stop.name}<br>
+                    <strong>Type:</strong> ${stop.type}<br>
+                    <strong>Dimension:</strong> ${stop.dimension}<br>
+                    <br>
+                    `;
+                    stopsContainer.appendChild(stopElement);
+                });
+            })
+            .catch(error => {
+                console.error("There was a problem with the fetch operation:", error);
+            });
+        });
+
+        document.getElementById("delete-button").addEventListener("click", function(event) {
+            const selectedPlanId = event.target.dataset.planId;
+
+            // Send the request with the modified data using fetch
+            fetch(`/travel_plans/${selectedPlanId}`, {
+                method: "DELETE",
+                headers: {
+                "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                throw new Error("Network response was not ok");
+                }
+                return response.text();
+            })
+            .then(data => {
+                fetchAndDisplayTravelPlans();
+                console.log(data); // Handle the response data as needed
+            })
+            .catch(error => {
+                console.error("There was a problem with the fetch operation:", error);
+            });
+        });
+    })
+
+    window.onload = fetchAndDisplayTravelPlans;
+</script>

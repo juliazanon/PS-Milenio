@@ -1,5 +1,5 @@
 require "kemal"
-require "../config/initializers/database"
+require "../../config/initializers/database"
 require "./controllers"
 require "./images"
 require "json"
@@ -7,14 +7,17 @@ require "json"
 module RmApi
   VERSION = "0.1.0"
 
-  # Get all travel plans
-  get "/travel_plans" do |env|
-    optimize = env.params.query["optimize"]? == "true"
-    expand = env.params.query["expand"]? == "true"
-    Controllers.get_all_plans(optimize, expand)
+  # Home page
+  get "/" do
+    render "src/client/home.ecr", "src/client/layouts/main.ecr"
   end
 
-  # Get a specific travel plan
+  # Get all travel plans
+  get "/travel_plans" do |env|
+    Controllers.get_all_plans(env)
+  end
+
+  # Get one plan
   get "/travel_plans/:id" do |env|
     Controllers.get_plan(env)
   end
