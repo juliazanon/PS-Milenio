@@ -122,11 +122,12 @@ def sort_stops(plan) : Array(Int32)
       until i >= locations.size
         location = locations[i]
         id = location["id"]
-        location_popularity_map[id.to_s] = get_location_popularity(location["residents"])
-
-        dimension_map[location["dimension"].to_s] << id.to_s
 
         if (id)
+          location_popularity_map[id.to_s] = get_location_popularity(location["residents"])
+
+          dimension_map[location["dimension"].to_s] << id.to_s
+
           index = name_array.index(id)
           name_indexes_map[id.to_s] = index if index
         end
@@ -136,11 +137,12 @@ def sort_stops(plan) : Array(Int32)
     rescue e # If there is only 1 location
       begin
         id = locations["id"]
-        location_popularity_map[id.to_s] = get_location_popularity(locations["residents"])
-
-        dimension_map[locations["dimension"].to_s] << id.to_s
 
         if (id)
+          location_popularity_map[id.to_s] = get_location_popularity(locations["residents"])
+
+          dimension_map[locations["dimension"].to_s] << id.to_s
+
           index = name_array.index(id)
           name_indexes_map[id.to_s] = index if index
         end
@@ -155,7 +157,7 @@ def sort_stops(plan) : Array(Int32)
     end
 
     # Sort dimensions by popularity
-    sorted_dimensions = dimension_popularity.to_a.sort_by { |tuple| tuple[1] }
+    sorted_dimensions = dimension_popularity.to_a.sort_by { |dimension| dimension[1] }
 
     # Sort locations within dimensions by location popularity then name
     sorted_dimensions.each do |dimension, _|

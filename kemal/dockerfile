@@ -1,17 +1,3 @@
-# FROM crystallang/crystal as compiler
-# WORKDIR /src
-# COPY . .
-# RUN mkdir -p /app && \
-#     shards install && \
-#     crystal build --release src/rm_api.cr -o /app/rm_api
-
-# FROM crystallang/crystal
-# EXPOSE 3000
-# WORKDIR /app
-# COPY --from=compiler /app/rm_api /app/rm_api
-# COPY . .
-# CMD ["./rm_api"]
-
 FROM crystallang/crystal
 RUN apt-get update && apt-get install -y postgresql-client
 WORKDIR /app

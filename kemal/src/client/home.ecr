@@ -170,7 +170,6 @@
         selectElement.selectedIndex = 0;
 
         // Set the previously selected ID to the value of the initial selected option
-
         container.appendChild(selectElement);
         container.innerHTML += `<button type="button" id="remove-stop-${locationsCounter}">Remove Stop</button>`;
 
@@ -286,42 +285,14 @@
                 const selectedStopsInputPost = document.getElementById("selected-stops-post");
                 selectedStopsInputPost.value = "2";
 
-                document.getElementById("remove-stop-" + locationsCounter).addEventListener("click", function (event) {
-                   // Remove the previously selected ID if it exists
-                    let arr = selectedStopsInputPost.value.split(","); // Convert string to array
-
-                    let index = arr.indexOf(postDropdown.getAttribute("data-prev-id").toString());
-                    if (index !== -1) {
-                        arr.splice(index, 1);
-                    }
-
-                    selectedStopsInputPost.value = arr.join(",");
-
-                   event.target.parentNode.remove();
-                });
-
                 // Put form
                 addLocationsDropdown(locations, false);
                 // Set previous id for dropdown
                 const putDropdown = document.getElementById("locations-dropdown-" + locationsCounter);
                 putDropdown.setAttribute("data-prev-id", 2);
                 // Set initial stop
-                const selectedStopsInputPut = document.getElementById("selected-stops-post");
+                const selectedStopsInputPut = document.getElementById("selected-stops-put");
                 selectedStopsInputPut.value = "2";
-
-                document.getElementById("remove-stop-" + locationsCounter).addEventListener("click", function (event) {
-                   // Remove the previously selected ID if it exists
-                    let arr = selectedStopsInputPut.value.split(","); // Convert string to array
-
-                    let index = arr.indexOf(putDropdown.getAttribute("data-prev-id").toString());
-                    if (index !== -1) {
-                        arr.splice(index, 1);
-                    }
-
-                    selectedStopsInputPut.value = arr.join(",");
-
-                   event.target.parentNode.remove();
-                });
             });
         
         // Handle add locations dropdowns
